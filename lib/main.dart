@@ -1,4 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'NextPage.dart';
 
 void main() {
   runApp(const MyApp());
@@ -8,7 +12,6 @@ class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
   // This widget is the root of your application.
-  //fjfjfj
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -32,7 +35,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const MyHomePage(title: 'タイマー'),
     );
   }
 }
@@ -56,71 +59,103 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+  int _second = 0;
+  int _msecond = 0;
+  int _minute = 0;
+  Timer? _timer;
+  bool _isRunning = false;
 
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  // ignore: non_constant_identifier_names
+  String _formatNumber(int number) {
+    return NumberFormat('00').format(number);
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
     return Scaffold(
       appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
         title: Text(widget.title),
       ),
       body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
         child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
           mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
-            ),
+          children: [
             Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
+              '${_formatNumber(_minute)}:${_formatNumber(_second)}.${_formatNumber(_msecond)}',
+              style: const TextStyle(fontSize: 80),
             ),
+            ElevatedButton(
+              onPressed: () {
+                toggleTimer();
+              },
+              child: Text(_isRunning ? 'ストップ' : 'スタート',
+                  style: TextStyle(
+                      color: _isRunning ? Colors.red : Colors.green,
+                      fontWeight: FontWeight.bold)),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                resetTimer();
+              },
+              child: const Text('リセット',
+                  style: TextStyle(
+                      color: Colors.black, fontWeight: FontWeight.bold)),
+            )
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+      // This trailing comma makes auto-formatting nicer for build methods.
     );
+  }
+
+  void toggleTimer() {
+    if (_isRunning) {
+      _timer?.cancel();
+    } else {
+      _timer = Timer.periodic(
+        const Duration(milliseconds: 10),
+        (timer) {
+          setState(() {
+            _msecond++;
+            if (_msecond >= 100) {
+              _second++;
+              _msecond = 0;
+            }
+            if (_second >= 60) {
+              _minute++;
+              _second = 0;
+            }
+          });
+
+          if (_second == 10000000) {
+            resetTimer();
+
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const NextPage()),
+            );
+          }
+        },
+      );
+    }
+    setState(() {
+      _isRunning = !_isRunning;
+    });
+  }
+
+  void resetTimer() {
+    _timer?.cancel();
+    setState(() {
+      _msecond = 0;
+      _second = 0;
+      _minute = 0;
+      _isRunning = false;
+    });
   }
 }
